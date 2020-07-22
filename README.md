@@ -5,13 +5,14 @@ Toast_Notify.ps1 will read an XML file on a file share so Toast Notifications ca
 To create a custom XML, copy CustomMessage.xml and edit the text you want to display in the toast notification. Reference that file using one of the script parameters.
 
 The following files should be present in the Script Directory when you create the package in MEMCM:-  
-**    
-Toast_Notify.ps1  
+  
+  
+**Toast_Notify.ps1  
 BadgeImage.jpg  
 HeroImage.jpg  
-CustomMessage.xml  
+CustomMessage.xml**  
   
-**
+  
 .PARAMETER XMLScriptDirSource  
 Specify the name of the XML file to read. The XML file must exist in the same directory as Toast_Notify.ps1. If no parameter is passed, it is assumed the XML file is called CustomMessage.xml.
   
