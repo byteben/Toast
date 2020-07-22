@@ -6,11 +6,11 @@ Filename:     Toast_Notify.ps1
 ===========================================================================
 
 .SYNOPSIS
-The purpose of the script is to create simple Toast Notifications in Windows 10
+The purpose of the script is to create simple Toast Notifications in Windows 10, deliverd as a package by MEMCM.
 
 .DESCRIPTION
 Toast_Notify.ps1 will read an XML file so Toast Notifications can be changed "on the fly" without having to repackage an application. The CustomMessage.xml file can be hosted on a fileshare.
-To create a custom XML, copy CustomMessage.xml and edit the text you want to disaply in the toast notification. The following files should be present in the Script Directory
+To create a custom XML, copy CustomMessage.xml and edit the text you want to disaply in the toast notification. The following files should be present in the Script Directory when you create the package in MEMCM:-
 
 Toast_Notify.ps1
 BadgeImage.jpg
