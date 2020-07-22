@@ -86,9 +86,6 @@ If ($XMLValid -eq $True) {
     #ToastDuration: Short = 7s, Long = 25s
     $ToastDuration = "long"
 
-    #Toast Time Format
-    $Time = Get-Date -Format HH:mm
-
     #Images
     $BadgeImage = "file:///$CurrentDir/badgeimage.jpg"
     $HeroImage = "file:///$CurrentDir/heroimage.jpg"
