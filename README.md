@@ -8,8 +8,7 @@ Toast_Notify.ps1 is a simple Toast Notification script designed to be deployed a
 Toast_Notify.ps1 will read an XML file on a file share so Toast Notifications can be changed "on the fly" without having to repackage. 
 To create a custom XML, copy CustomMessage.xml and edit the text you want to display in the toast notification. Reference that file using one of the script parameters.  
   
-**Points to Consider**    
-  
+**Points to Consider**  
 I am using an existing app in Windows to call the Toasts. This script creates two buttons in the Toast, "Details" and "Dismiss". Cicking details is designed to take the user to an internal Service Desk announcement page. For that reason, **MSEdge** works really well because the Toast Action launches the browser in the foreground. Oh, you will need MSEdge installed on your client computers for this to work.  
 
 The following files should be present in the Script Directory when you create the package in MEMCM:-   
