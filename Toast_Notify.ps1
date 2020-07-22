@@ -100,7 +100,7 @@ If ($XMLValid -eq $True) {
 
     #Get last(current) logged on user
     $LoggedOnUserPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI"
-    If (!(Test-Path $LoggedOnUserPath)) {
+    If (!((Get-ItemProperty $LoggedOnUserPath).LastLoggedOnDisplayName)) {
         Try {
             $Firstname = $Null
         }
