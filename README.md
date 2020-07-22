@@ -3,7 +3,7 @@
  http://byteben.com/bb/wp-content/uploads/2020/07/Toast-Example.jpg  
  http://byteben.com/bb/wp-content/uploads/2020/07/Content-Example.jpg  
    
-Toast_Notify.ps1 is a simple Toast Notification script designed to be deployed as a package from MEMCM  
+Toast_Notify.ps1 is a simple Toast Notification script designed to be deployed as a package from MEMCM. The "Set and forget" mentality of packages works really well because we don't need to specify a detection method once the script has run.  
   
 Toast_Notify.ps1 will read an XML file on a file share so Toast Notifications can be changed "on the fly" without having to repackage. 
 To create a custom XML, copy CustomMessage.xml and edit the text you want to display in the toast notification. Reference that file using one of the script parameters.  
