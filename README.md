@@ -1,5 +1,7 @@
-# Toast
- 
+# Toast  
+  
+ https://byteben.com/bb/toast-example/  
+   
 Toast_Notify.ps1 is a simple Toast Notification script designed to be deployed as a package from MEMCM  
   
 Toast_Notify.ps1 will read an XML file on a file share so Toast Notifications can be changed "on the fly" without having to repackage. 
