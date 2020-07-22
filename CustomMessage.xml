@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ToastContent>
+    <ToastTitle>We want to bring to your attention some important information. Please review the details below before contacting the Service Desk</ToastTitle>
+    <Signature>Sent on behalf of the ICT Service Desk</Signature>
+    <EventTitle>Major IT Issues</EventTitle>
+    <EventText>We are currently experiencing problems with all our systems. We are drinking coffee will provide an update shortly. Thank you for your patience</EventText>
+    <ButtonTitle>Details</ButtonTitle>
+    <ButtonAction>https://byteben.com</ButtonAction>
+</ToastContent>
