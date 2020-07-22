@@ -21,13 +21,13 @@ CustomMessage.xml
 Specify the name of the XML file to read. The XML file must exist in the same directory as Toast_Notify.ps1. If no parameter is passed, it is assumed the XML file is called CustomMessage.xml.
 
 .PARAMETER XMLOtherSource
-Specify the location of the Custom XML file used for the Toast when it is not in the saem directory as the Toast_Notify.ps1 script
+Specify the location of the Custom XML file used for the Toast when it is not in the same directory as the Toast_Notify.ps1 script
 
 .EXAMPLE
 Toast_Notify.ps1 -XMLOtherSource "\\fileserverhome\xml\CustomMessage.xml"
 
 .EXAMPLE
-Toast_Notify.ps1 -XMLSciptDirSource "CustomMessage5.xml"
+Toast_Notify.ps1 -XMLSciptDirSource "PhoneSystemProblems.xml"
 
 .EXAMPLE
 Toast_Notify.ps1
