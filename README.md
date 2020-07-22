@@ -1,6 +1,6 @@
 # Toast
  
-Toast_Notify.ps1 is a simple Toast Notification script designed to be deployed as a package from MEMCM
+Toast_Notify.ps1 is a simple Toast Notification script designed to be deployed as a package from MEMCM  
 Toast_Notify.ps1 will read an XML file on a file share so Toast Notifications can be changed "on the fly" without having to repackage. 
 To create a custom XML, copy CustomMessage.xml and edit the text you want to display in the toast notification. Reference that file using one of the script parameters.
 
@@ -30,3 +30,15 @@ Toast_Notify.ps1
   
 **Known Issues**  
 Currently, the images in the XML can only be read from the local files system. This is not an issue if we are deploying the package from MEMCM. Further development will see the ability to convert images to Base64 or host them on a web server
+  
+  
+**Thanks for the help from**  
+  
+  @guyrleech
+  @young_robbo
+  
+**Community**  
+  
+  Seriously check our Martin Bentsson's work on Toasts. It is very comprehensive.  https://www.imab.dk/windows-10-toast-notification-script/
+  I challenged myself to learn how Windows Toasts work so this was a labour of love for me. I have enjoyed the ride so far
+  
