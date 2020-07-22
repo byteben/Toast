@@ -26,7 +26,7 @@ Specify the name of the XML file to read. The XML file must exist in the same di
 Specify the location of the Custom XML file used for the Toast when it is not in the MEMCM package
   
 **.EXAMPLE**  
-Toast_Notify.ps1 -XMLOtherSource "\\fileserverhome\xml\CustomMessage.xml"
+Toast_Notify.ps1 -XMLOtherSource "\\\\fileserverhome\xml\CustomMessage.xml"
   
 **.EXAMPLE**  
 Toast_Notify.ps1 -XMLSciptDirSource "PhoneSystemProblems.xml"
