@@ -29,16 +29,13 @@ Toast_Notify.ps1 -XMLSciptDirSource "PhoneSystemProblems.xml"
 Toast_Notify.ps1
   
 **Known Issues**  
-Currently, the images in the XML can only be read from the local files system. This is not an issue if we are deploying the package from MEMCM. Further development will see the ability to convert images to Base64 or host them on a web server
-  
+Currently, the images in the XML can only be read from the local files system. This is not an issue if we are deploying the package from MEMCM. Further development will see the ability to convert images to Base64 or host them on a web server.
   
 **Thanks for the help from**  
-  
   @guyrleech
   @young_robbo
   
 **Community**  
-  
   Seriously check our Martin Bentsson's work on Toasts. It is very comprehensive.  https://www.imab.dk/windows-10-toast-notification-script/
   I challenged myself to learn how Windows Toasts work so this was a labour of love for me. I have enjoyed the ride so far
   
