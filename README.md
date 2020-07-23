@@ -7,7 +7,9 @@
    
 **Description**  
   
-Toast_Notify.ps1 is a simple Toast Notification script designed to be deployed as a package from MEMCM. The "Set and forget" mentality of packages works really well because we don't need to specify a detection method once the script has run.
+The "Toast Notify" solution will pop a notification toast from the system tray in Windows 10 (See Toast-Example.jpg). This project was born out of the desire for me to understand Toast Notifications better and seek t replace a 3rd party desktop notification solution. The titles, texts and action button are customisable via an XML document.  
+  
+Toast_Notify.ps1 is a script designed to be deployed as a package from MEMCM. The "Set and forget" mentality of packages works really well because we don't need to specify a detection method once the script has run.  
   
 Toast_Notify.ps1 will read an XML file on a file share or from the same directory. If the XML is stored on a fileservr, theo Toast Notifications can be changed "on the fly" without having to repackage the script. 
 To create a custom XML, copy CustomMessage.xml and edit the text you want to display in the toast notification. Place the modified XML in the script directory or on a fileserver. Call your custom file using one of the script parameters below.  
