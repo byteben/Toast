@@ -63,5 +63,7 @@ Currently, the images in the XML can only be read from the local file system. Th
 **Community**  
   
   Seriously check our Martin Bentsson's work on Toasts. It is very comprehensive.  https://www.imab.dk/windows-10-toast-notification-script/
-  I challenged myself to learn how Windows Toasts work so this was a labour of love for me. I have enjoyed the ride so far
+  I don't believe in reinventing the wheel, part of me was saying "Use Martin's Script", but I challenged myself to learn how Windows Toasts work from the ground up - so this   project was a labour of love for me. I have enjoyed the ride so far.  
+  
+  If you have any comments, feedback or would like to contribute - please don't be shy!
   
