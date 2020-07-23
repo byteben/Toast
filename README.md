@@ -22,7 +22,7 @@ The following files should be present in the Script Directory when you create th
   
 **Toast_Notify.ps1  
 BadgeImage.jpg  
-HeroImage.jpg  
+HeroImage.jpg (364 x 180px, 3MB Normal Connection / 1MB Metered Connection)
 CustomMessage.xml**  
   
 **Parameters**  
