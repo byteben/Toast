@@ -22,8 +22,10 @@ The following files should be present in the Script Directory when you create th
   
 **Toast_Notify.ps1  
 BadgeImage.jpg  
-HeroImage.jpg (364 x 180px, 3MB Normal Connection / 1MB Metered Connection)
+HeroImage.jpg (364 x 180px, 3MB Normal Connection / 1MB Metered Connection)  
 CustomMessage.xml**  
+  
+More on Toast Content can be found here:- https://docs.microsoft.com/en-us/windows/uwp/design/shell/tiles-and-notifications/adaptive-interactive-toasts  
   
 **Parameters**  
 You should specify either XMLScriptSourceDir **or** XMLOtherSource parameters but not both. If you specify no parameter the script will read the CustomMessage.xml in the script root.  
