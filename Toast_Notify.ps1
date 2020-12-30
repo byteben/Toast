@@ -36,6 +36,7 @@ Toast_Notify.ps1
 Param
 (
     [Parameter(Mandatory = $False)]
+    [Switch]$Snooze,
     [String]$XMLScriptDirSource = "CustomMessage.xml",
     [String]$XMLOtherSource
 
@@ -82,6 +83,7 @@ If ($XMLValid -eq $True) {
     $EventText = $XMLToast.ToastContent.EventText
     $ButtonTitle = $XMLToast.ToastContent.ButtonTitle
     $ButtonAction = $XMLToast.ToastContent.ButtonAction
+    $SnoozeTitle = $XMLToast.ToastContent.SnoozeTitle
 
     #ToastDuration: Short = 7s, Long = 25s
     $ToastDuration = "long"
@@ -99,7 +101,7 @@ If ($XMLValid -eq $True) {
     $Launcherid = "MSEdge"
 
     #Get last(current) logged on user
-    $LoggedOnUserPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI"
+    $LoggedOnUserPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\LastLoggedOnDisplayName"
     If (!(Test-Path $LoggedOnUserPath)) {
         Try {
             $Firstname = $Null
@@ -127,8 +129,10 @@ If ($XMLValid -eq $True) {
     [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
     [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
 
-    #Build XML Template
-    [xml]$ToastTemplate = @"
+    If (!$Snooze) {
+
+        #Build XML Template when Snooze Timer is not specified
+        [xml]$ToastTemplate = @"
 <toast duration="$ToastDuration" scenario="reminder">
     <visual>
         <binding template="ToastGeneric">
@@ -156,7 +160,47 @@ If ($XMLValid -eq $True) {
     </actions>
 </toast>
 "@
+    }
+    else {
 
+        #Build XML Template when Snooze Timer is specified
+        [xml]$ToastTemplate = @"
+<toast duration="$ToastDuration" scenario="reminder">
+    <visual>
+        <binding template="ToastGeneric">
+            <text>$CustomHello</text>
+            <text>$ToastTitle</text>
+            <text placement="attribution">$Signature</text>
+            <image placement="hero" src="$HeroImage"/>
+            <image placement="appLogoOverride" hint-crop="circle" src="$BadgeImage"/>
+            <group>
+                <subgroup>
+                    <text hint-style="title" hint-wrap="true" >$EventTitle</text>
+                </subgroup>
+            </group>
+            <group>
+                <subgroup>
+                    <text hint-style="body" hint-wrap="true" >$EventText</text>
+                </subgroup>
+            </group>
+        </binding>
+    </visual>
+    <audio src="ms-winsoundevent:notification.default"/>
+    <actions>
+        <input id="SnoozeTimer" type="selection" title="Select a Snooze Interval" defaultInput="1">
+            <selection id="1" content="1 Minute"/>
+            <selection id="30" content="30 Minutes"/>
+            <selection id="60" content="1 Hour"/>
+            <selection id="120" content="2 Hours"/>
+            <selection id="240" content="4 Hours"/>
+        </input> 
+        <action arguments="$ButtonAction" content="$ButtonTitle" activationType="protocol" />
+        <action activationType="system" arguments="snooze" hint-inputId="SnoozeTimer" content="$SnoozeTitle" id="test-snooze"/>
+        <action arguments="dismiss" content="Dismiss" activationType="system"/>
+    </actions>
+</toast>
+"@
+    }
     #Prepare XML
     $ToastXml = [Windows.Data.Xml.Dom.XmlDocument]::New()
     $ToastXml.LoadXml($ToastTemplate.OuterXml)

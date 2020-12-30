@@ -6,4 +6,5 @@
     <EventText>We are currently experiencing problems with all our systems. We are drinking coffee will provide an update shortly. Thank you for your patience</EventText>
     <ButtonTitle>Details</ButtonTitle>
     <ButtonAction>https://byteben.com</ButtonAction>
+	<SnoozeTitle>Snooze</SnoozeTitle>
 </ToastContent>
