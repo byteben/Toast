@@ -1,4 +1,23 @@
-# Toast  
+# Version History  
+
+**Version 1.2 - 09/01/21**  
+
+Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.
+If the Toast script is deployed in the SYSTEM context, the script source is copied to a new folder in the users %TEMP% Directory.
+The folder is given a unique GUID name.  
+
+A scheduled task is created for the current logged on user and is unique for the each time the Toast Script is deployed. Each scheduled task is named using the User SID and the unique Task GUID.
+If the script is deployed to the current logged on user, a scheduled task is not created and the script is run as normal
+
+**Version 1.1 - 30/12/20**  
+
+Added a Snooze option (Use the -Snooze switch)
+
+**Version 1.0 - 22/07/20**  
+
+Release
+    
+# Project Outline
 
 **Screenshots**  
   
@@ -49,11 +68,12 @@ Toast_Notify.ps1 -XMLSciptDirSource "PhoneSystemProblems.xml"
   
 **.EXAMPLE**  
   
-Toast_Notify.ps1
+Toast_Notify.ps1 -Snooze
   
 **Known Issues** 
   
 Currently, the images in the XML can only be read from the local file system. This is not an issue if we are deploying the package from MEMCM.
+PowerShell Window flashes before Toast when deployed in SYSTEM context
   
 **Thanks for the help from**  
   
