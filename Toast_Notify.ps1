@@ -5,6 +5,20 @@ Created by:   Ben Whitmore
 Filename:     Toast_Notify.ps1
 ===========================================================================
 
+Version 1.2 - 09/01/21
+Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.
+
+Special Thanks to: -
+Inspiration for creating a Scheduled Task for Toasts @PaulWetter https://wetterssource.com/ondemandtoast
+Inspiration for running Toasts in User Context @syst_and_deploy http://www.systanddeploy.com/2020/11/display-simple-toast-notification-for.html
+Inspiration for creating scheduled tasks for the logged on user @ccmexec via Community Hub in ConfigMgr https://github.com/Microsoft/configmgr-hub/commit/e4abdc0d3105afe026211805f13cf533c8de53c4
+
+Version 1.1 - 30/12/20
+Added Snooze Switch option
+
+Version 1.0 - 22/07/20
+Release
+
 .SYNOPSIS
 The purpose of the script is to create simple Toast Notifications in Windows 10
 
@@ -23,6 +37,9 @@ Specify the name of the XML file to read. The XML file must exist in the same di
 .PARAMETER XMLOtherSource
 Specify the location of the Custom XML file used for the Toast when it is not in the same directory as the Toast_Notify.ps1 script
 
+.PARAMETER Snooze
+Add a snooze option to the Toast
+
 .EXAMPLE
 Toast_Notify.ps1 -XMLOtherSource "\\fileserverhome\xml\CustomMessage.xml"
 
@@ -30,7 +47,7 @@ Toast_Notify.ps1 -XMLOtherSource "\\fileserverhome\xml\CustomMessage.xml"
 Toast_Notify.ps1 -XMLSciptDirSource "PhoneSystemProblems.xml"
 
 .EXAMPLE
-Toast_Notify.ps1
+Toast_Notify.ps1 -Snooze
 #>
 
 Param
@@ -38,9 +55,14 @@ Param
     [Parameter(Mandatory = $False)]
     [Switch]$Snooze,
     [String]$XMLScriptDirSource = "CustomMessage.xml",
-    [String]$XMLOtherSource
-
+    [String]$XMLOtherSource,
+    [String]$ToastGUID
 )
+
+#Set Unique GUID for Toast if it is not passed to the script. This should only happen from the Scheduled Task
+If (!($ToastGUID)){
+    $ToastGUID = ([guid]::NewGuid()).ToString().ToUpper()
+}
 
 #Current Directory
 $ScriptPath = $MyInvocation.MyCommand.Path
@@ -54,85 +76,150 @@ else {
     $XMLPath = $XMLOtherSource
 }
 
-#Test if XML exists
-if (!(Test-Path -Path $XMLPath)) {
-    throw "$XMLPath is invalid."
-}
+#Get Logged On User to prepare Scheduled Task
+$LoggedOnUserName = (Get-CimInstance -Namespace "root\cimv2" -ClassName Win32_ComputerSystem).Username
+$LoggedOnUserSID = (Get-CimInstance -Namespace "root\cimv2" -ClassName Win32_UserAccount | Where-Object { $_.Caption -eq $LoggedOnUserName }).SID
 
-#Check XML is valid
-$XMLToast = New-Object System.Xml.XmlDocument
-try {
-    $XMLToast.Load((Get-ChildItem -Path $XMLPath).FullName)
-    $XMLValid = $True
-}
-catch [System.Xml.XmlException] {
-    Write-Verbose "$XMLPath : $($_.toString())"
-    $XMLValid = $False
-}
+#Get list of User Profiles
+$ProfilePath = Get-CimInstance -Namespace "root\cimv2" -ClassName "Win32_UserProfile"
 
-#Continue if XML is valid
-If ($XMLValid -eq $True) {
+# Get Profile Path for LoggedOnUser
+Foreach ($Profile in $ProfilePath) {
+    Try {
+        If ($LoggedOnUserSID -eq $Profile.SID) {
 
-    #Read XML Nodes
-    [XML]$Toast = Get-Content $XMLPath
-
-    #Create Toast Variables
-    $ToastTitle = $XMLToast.ToastContent.ToastTitle
-    $Signature = $XMLToast.ToastContent.Signature
-    $EventTitle = $XMLToast.ToastContent.EventTitle
-    $EventText = $XMLToast.ToastContent.EventText
-    $ButtonTitle = $XMLToast.ToastContent.ButtonTitle
-    $ButtonAction = $XMLToast.ToastContent.ButtonAction
-    $SnoozeTitle = $XMLToast.ToastContent.SnoozeTitle
-
-    #ToastDuration: Short = 7s, Long = 25s
-    $ToastDuration = "long"
-
-    #Toast Time Format
-    $Time = Get-Date -Format HH:mm
-
-    #Images
-    $BadgeImage = "file:///$CurrentDir/badgeimage.jpg"
-    $HeroImage = "file:///$CurrentDir/heroimage.jpg"
-
-    #Set COM App ID > To bring a URL on button press to focus use a browser for the appid e.g. MSEdge
-    #$LauncherID = "Microsoft.SoftwareCenter.DesktopToasts"
-    #$LauncherID = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe"
-    $Launcherid = "MSEdge"
-
-    #Get last(current) logged on user
-    $LoggedOnUserPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\LastLoggedOnDisplayName"
-    If (!(Test-Path $LoggedOnUserPath)) {
-        Try {
-            $Firstname = $Null
+            #Set Toast Path to UserProfile Temp Directory
+            $LoggedOnUserToastPath = (Join-Path $Profile.LocalPath "AppData\Local\Temp\$($ToastGuid)")
         }
-        Catch [System.Management.Automation.ItemNotFoundException] {
-            Write-Warning "$RegistryKey was not found."
+    } 
+    Catch {
+        Write-Warning $_.Exception.Message
+        Write-Warning "Error resolving Logged on User SID to a valid Profile Path"
+
+        #Set Toast Path to C:\Windows\Temp if user profile path cannot be resolved
+        $LoggedOnUserToastPath = (Join-Path $ENV:Windir "Temp\$($ToastGuid)")
+    }
+}
+
+#Create TEMP folder to stage Toast Notification Content in %TEMP% Folder
+Try {
+    New-Item $LoggedOnUserToastPath -ItemType Directory -ErrorAction Continue | Out-Null
+    Try {
+        $ToastFiles = Get-ChildItem $CurrentDir -Recurse
+
+        #Copy Toast Files to Toat TEMP folder
+        ForEach ($ToastFile in $ToastFiles) {
+            Copy-Item (Join-Path $CurrentDir $ToastFile) -Destination $LoggedOnUserToastPath -ErrorAction Continue
         }
-        Catch {
-            Write-Warning "Error $($error[0].Exception)."
-        } 
     }
-    else {
-        $User = Get-Itemproperty -Path $LoggedOnUserPath -Name "LastLoggedOnDisplayName" | Select-Object -ExpandProperty LastLoggedOnDisplayName
-        $DisplayName = $User.Split(" ")
-        $Firstname = $DisplayName[0]
+    Catch {
+        Write-Warning $_.Exception.Message
+    }
+}
+Catch {
+    Write-Warning $_.Exception.Message
+}
+
+#Dont Create a Scheduled Task if the script is running in the context of the logged on user, only if SYSTEM fired the script i.e. Deployment from Intune/ConfigMgr
+If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq "NT AUTHORITY\SYSTEM") {
+
+    #Set new Toast script to run from TEMP path
+    $New_ToastPath = Join-Path $LoggedOnUserToastPath "Toast_Notify.ps1"
+
+    #Created Scheduled Task to run as Logged on User
+    $Task_TimeToRun = (Get-Date).AddSeconds(30).ToString('s')
+    $Task_Expiry = (Get-Date).AddSeconds(120).ToString('s')
+    $Task_Action = New-ScheduledTaskAction -Execute "C:\WINDOWS\system32\WindowsPowerShell\v1.0\PowerShell.exe" -Argument "-NoProfile -WindowStyle Hidden -File $New_ToastPath -ToastGUID $ToastGUID"
+    $Task_Trigger = New-ScheduledTaskTrigger -Once -At $Task_TimeToRun
+    $Task_Trigger.EndBoundary = $Task_Expiry
+    $Task_Principal = New-ScheduledTaskPrincipal -UserId $LoggedOnUserName -LogonType ServiceAccount
+    $Task_Settings = New-ScheduledTaskSettingsSet -Compatibility V1 -DeleteExpiredTaskAfter (New-TimeSpan -Seconds 600)
+    $New_Task = New-ScheduledTask -Description "Toast_Notififcation_$($LoggedOnUserSID)_$($ToastGuid) Task for user notification" -Action $Task_Action -Principal $Task_Principal -Trigger $Task_Trigger -Settings $Task_Settings
+    Register-ScheduledTask -TaskName "Toast_Notififcation_$($LoggedOnUserSID)_$($ToastGuid)" -InputObject $New_Task
+}
+
+#Run the toast of the script is running in the context of the Logged On User
+If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $LoggedOnUserName) {
+
+    #Test if XML exists
+    if (!(Test-Path -Path $XMLPath)) {
+        throw "$XMLPath is invalid."
     }
 
-    #Get Hour of Day and set Custom Hello
-    $Hour = (Get-Date).Hour
-    If ($Hour -lt 12) { $CustomHello = "Good Morning $($Firstname)" }
-    ElseIf ($Hour -gt 16) { $CustomHello = "Good Evening $($Firstname)" }
-    Else { $CustomHello = "Good Afternoon $($Firstname)" }
+    #Check XML is valid
+    $XMLToast = New-Object System.Xml.XmlDocument
+    try {
+        $XMLToast.Load((Get-ChildItem -Path $XMLPath).FullName)
+        $XMLValid = $True
+    }
+    catch [System.Xml.XmlException] {
+        Write-Verbose "$XMLPath : $($_.toString())"
+        $XMLValid = $False
+    }
 
-    #Load Assemblies
-    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+    #Continue if XML is valid
+    If ($XMLValid -eq $True) {
 
-    If (!$Snooze) {
+        #Read XML Nodes
+        [XML]$Toast = Get-Content $XMLPath
 
-        #Build XML Template when Snooze Timer is not specified
-        [xml]$ToastTemplate = @"
+        #Create Toast Variables
+        $ToastTitle = $XMLToast.ToastContent.ToastTitle
+        $Signature = $XMLToast.ToastContent.Signature
+        $EventTitle = $XMLToast.ToastContent.EventTitle
+        $EventText = $XMLToast.ToastContent.EventText
+        $ButtonTitle = $XMLToast.ToastContent.ButtonTitle
+        $ButtonAction = $XMLToast.ToastContent.ButtonAction
+        $SnoozeTitle = $XMLToast.ToastContent.SnoozeTitle
+
+        #ToastDuration: Short = 7s, Long = 25s
+        $ToastDuration = "long"
+
+        #Toast Time Format
+        $Time = Get-Date -Format HH:mm
+
+        #Images
+        $BadgeImage = "file:///$CurrentDir/badgeimage.jpg"
+        $HeroImage = "file:///$CurrentDir/heroimage.jpg"
+
+        #Set COM App ID > To bring a URL on button press to focus use a browser for the appid e.g. MSEdge
+        #$LauncherID = "Microsoft.SoftwareCenter.DesktopToasts"
+        #$LauncherID = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe"
+        $Launcherid = "MSEdge"
+
+        #Get last(current) logged on user
+        $LoggedOnUserPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\LastLoggedOnDisplayName"
+        If (!(Test-Path $LoggedOnUserPath)) {
+            Try {
+                $Firstname = $Null
+            }
+            Catch [System.Management.Automation.ItemNotFoundException] {
+                Write-Warning "$RegistryKey was not found."
+            }
+            Catch {
+                Write-Warning "Error $($error[0].Exception)."
+            } 
+        }
+        else {
+            $User = Get-Itemproperty -Path $LoggedOnUserPath -Name "LastLoggedOnDisplayName" | Select-Object -ExpandProperty LastLoggedOnDisplayName
+            $DisplayName = $User.Split(" ")
+            $Firstname = $DisplayName[0]
+        }
+
+        #Get Hour of Day and set Custom Hello
+        $Hour = (Get-Date).Hour
+        If ($Hour -lt 12) { $CustomHello = "Good Morning $($Firstname)" }
+        ElseIf ($Hour -gt 16) { $CustomHello = "Good Evening $($Firstname)" }
+        Else { $CustomHello = "Good Afternoon $($Firstname)" }
+
+        #Load Assemblies
+        [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+        [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+
+        If (!$Snooze) {
+
+            #Build XML Template when Snooze Timer is not specified
+            [xml]$ToastTemplate = @"
 <toast duration="$ToastDuration" scenario="reminder">
     <visual>
         <binding template="ToastGeneric">
@@ -160,11 +247,11 @@ If ($XMLValid -eq $True) {
     </actions>
 </toast>
 "@
-    }
-    else {
+        }
+        else {
 
-        #Build XML Template when Snooze Timer is specified
-        [xml]$ToastTemplate = @"
+            #Build XML Template when Snooze Timer is specified
+            [xml]$ToastTemplate = @"
 <toast duration="$ToastDuration" scenario="reminder">
     <visual>
         <binding template="ToastGeneric">
@@ -200,12 +287,13 @@ If ($XMLValid -eq $True) {
     </actions>
 </toast>
 "@
-    }
-    #Prepare XML
-    $ToastXml = [Windows.Data.Xml.Dom.XmlDocument]::New()
-    $ToastXml.LoadXml($ToastTemplate.OuterXml)
+        }
+        #Prepare XML
+        $ToastXml = [Windows.Data.Xml.Dom.XmlDocument]::New()
+        $ToastXml.LoadXml($ToastTemplate.OuterXml)
 
-    #Prepare and Create Toast
-    $ToastMessage = [Windows.UI.Notifications.ToastNotification]::New($ToastXML)
-    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($LauncherID).Show($ToastMessage)
+        #Prepare and Create Toast
+        $ToastMessage = [Windows.UI.Notifications.ToastNotification]::New($ToastXML)
+        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($LauncherID).Show($ToastMessage)
+    }
 }
