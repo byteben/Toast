@@ -134,8 +134,8 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq "NT AUT
     $Task_Trigger.EndBoundary = $Task_Expiry
     $Task_Principal = New-ScheduledTaskPrincipal -UserId $LoggedOnUserName -LogonType ServiceAccount
     $Task_Settings = New-ScheduledTaskSettingsSet -Compatibility V1 -DeleteExpiredTaskAfter (New-TimeSpan -Seconds 600)
-    $New_Task = New-ScheduledTask -Description "Toast_Notififcation_$($LoggedOnUserSID)_$($ToastGuid) Task for user notification" -Action $Task_Action -Principal $Task_Principal -Trigger $Task_Trigger -Settings $Task_Settings
-    Register-ScheduledTask -TaskName "Toast_Notififcation_$($LoggedOnUserSID)_$($ToastGuid)" -InputObject $New_Task
+    $New_Task = New-ScheduledTask -Description "Toast_Notification_$($LoggedOnUserSID)_$($ToastGuid) Task for user notification" -Action $Task_Action -Principal $Task_Principal -Trigger $Task_Trigger -Settings $Task_Settings
+    Register-ScheduledTask -TaskName "Toast_Notification_$($LoggedOnUserSID)_$($ToastGuid)" -InputObject $New_Task
 }
 
 #Run the toast of the script is running in the context of the Logged On User
