@@ -73,20 +73,20 @@ PowerShell Window flashes before Toast when deployed in SYSTEM context
   
 **Inspiration, Credit and Help**  
   
-  @guyrleech
-  @young_robbo
-  @mwbengtsson
-  @ccmexec
-  @syst_and_deploy
+  @guyrleech  
+  @young_robbo  
+  @mwbengtsson  
+  @ccmexec  
+  @syst_and_deploy  
   
 **Community**  
   
-https://www.imab.dk/windows-10-toast-notification-script/
-http://www.systanddeploy.com/2020/09/display-simple-toast-notification-with.html
-https://github.com/Windos/BurntToast
-https://wetterssource.com/ondemandtoast
-https://msendpointmgr.com/2020/06/29/adding-notifications-to-win32appremedy-with-proactive-remediations/
-https://msendpointmgr.com/2020/08/07/proactive-battery-replacement-with-endpoint-analytics/
+https://www.imab.dk/windows-10-toast-notification-script/  
+http://www.systanddeploy.com/2020/09/display-simple-toast-notification-with.html  
+https://github.com/Windos/BurntToast  
+https://wetterssource.com/ondemandtoast  
+https://msendpointmgr.com/2020/06/29/adding-notifications-to-win32appremedy-with-proactive-remediations/  
+https://msendpointmgr.com/2020/08/07/proactive-battery-replacement-with-endpoint-analytics/  
   
-If you have any comments, feedback or would like to contribute - please don't be shy!
+I welcome comments and feedback. Please fork repo to contribute
   
