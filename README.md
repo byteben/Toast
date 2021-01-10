@@ -54,13 +54,9 @@ https://docs.microsoft.com/en-us/windows/uwp/design/shell/tiles-and-notification
 **Parameters**  
 You should specify either XMLScriptSourceDir **or** XMLOtherSource parameters but not both. If you specify no parameter the script will read the CustomMessage.xml in the script root.  
   
-**.PARAMETER XMLScriptDirSource**    
+**.PARAMETER XMLSource**    
   
 Specify the name of the XML file to read. The XML file must exist in the same directory as Toast_Notify.ps1. If no parameter is passed, it is assumed the XML file is called CustomMessage.xml.
-  
-**.PARAMETER XMLOtherSource** 
-  
-Specify the location of the Custom XML file used for the Toast when it is not the same directory as Toast_Notify.ps1 e.g the full UNC path to the XML file.
   
 **.EXAMPLE**  
   
@@ -79,15 +75,22 @@ Toast_Notify.ps1 -Snooze
 Currently, the images in the XML can only be read from the local file system. This is not an issue if we are deploying the package from MEMCM.
 PowerShell Window flashes before Toast when deployed in SYSTEM context
   
-**Thanks for the help from**  
+**Inspiration, Credit and Help**  
   
   @guyrleech
   @young_robbo
+  @mwbengtsson
+  @ccmexec
+  @syst_and_deploy
   
 **Community**  
   
-  Seriously check our Martin Bentsson's work on Toasts. It is very comprehensive.  https://www.imab.dk/windows-10-toast-notification-script/
-  I don't believe in reinventing the wheel, part of me was saying "Use Martin's Script", but I challenged myself to learn how Windows Toasts work from the ground up - so this   project was a labour of love for me. I have enjoyed the ride so far.  
+https://www.imab.dk/windows-10-toast-notification-script/
+http://www.systanddeploy.com/2020/09/display-simple-toast-notification-with.html
+https://github.com/Windos/BurntToast
+https://wetterssource.com/ondemandtoast
+https://msendpointmgr.com/2020/06/29/adding-notifications-to-win32appremedy-with-proactive-remediations/
+https://msendpointmgr.com/2020/08/07/proactive-battery-replacement-with-endpoint-analytics/
   
-  If you have any comments, feedback or would like to contribute - please don't be shy!
+If you have any comments, feedback or would like to contribute - please don't be shy!
   
