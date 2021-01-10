@@ -52,7 +52,7 @@ More information and Toast Content guidelines can be found at:-
 https://docs.microsoft.com/en-us/windows/uwp/design/shell/tiles-and-notifications/toast-ux-guidance  
   
 **Parameters**  
-You should specify either XMLScriptSourceDir **or** XMLOtherSource parameters but not both. If you specify no parameter the script will read the CustomMessage.xml in the script root.  
+If you specify no parameter for XMLSource the script will read the CustomMessage.xml in the script root.  
   
 **.PARAMETER XMLSource**    
   
