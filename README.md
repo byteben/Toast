@@ -1,21 +1,24 @@
 # Version History  
 
+**Version 1.2.10 - 10/01/21**    
+
+-Removed XMLOtherSource Parameter  
+-Cleaned up XML formatting which removed unnecessary duplication when the Snooze parameter was passed. Action ChildNodes are now appended to ToastTemplate XML.
+
 **Version 1.2 - 09/01/21**  
 
-Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.
-If the Toast script is deployed in the SYSTEM context, the script source is copied to a new folder in the users %TEMP% Directory.
-The folder is given a unique GUID name.  
-
-A scheduled task is created for the current logged on user and is unique for the each time the Toast Script is deployed. Each scheduled task is named using the User SID and the unique Task GUID.
-If the script is deployed to the current logged on user, a scheduled task is not created and the script is run as normal
+-Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.  
+-If the Toast script is deployed in the SYSTEM context, the script source is copied to a new folder in the users %TEMP% Directory. The folder is given a unique GUID name.  
+-A scheduled task is created for the current logged on user and is unique for the each time the Toast Script is deployed. Each scheduled task is named using the User SID and the unique Task GUID.  
+-If the script is deployed to the current logged on user, a scheduled task is not created and the script is run as normal.  
 
 **Version 1.1 - 30/12/20**  
 
-Added a Snooze option (Use the -Snooze switch)
+-Added a Snooze option (Use the -Snooze switch).  
 
 **Version 1.0 - 22/07/20**  
 
-Release
+-Release
     
 # Project Outline
 
