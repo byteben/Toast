@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ToastContent>
-    <ToastTitle>We want to bring to your attention some important information. Please review the details below before contacting the Service Desk</ToastTitle>
-    <Signature>Sent on behalf of the ICT Service Desk</Signature>
-    <EventTitle>Scheduled Mainteneance</EventTitle>
-    <EventText>We are working on your computer later. Please log off when you leave the office today but leave the computer on. Thank You</EventText>
-    <ButtonTitle>Details</ButtonTitle>
-    <ButtonAction>https://byteben.com</ButtonAction>
-</ToastContent>

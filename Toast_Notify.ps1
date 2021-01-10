@@ -5,19 +5,23 @@ Created by:   Ben Whitmore
 Filename:     Toast_Notify.ps1
 ===========================================================================
 
-Version 1.2 - 09/01/21
-Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.
+Version 1.2.10 - 10/01/21
+-Removed XMLOtherSource Parameter
+-Cleaned up XML formatting which removed unnecessary duplication when the Snooze parameter was passed. Action ChildNodes are now appended to ToastTemplate XML.
 
-Special Thanks to: -
-Inspiration for creating a Scheduled Task for Toasts @PaulWetter https://wetterssource.com/ondemandtoast
-Inspiration for running Toasts in User Context @syst_and_deploy http://www.systanddeploy.com/2020/11/display-simple-toast-notification-for.html
-Inspiration for creating scheduled tasks for the logged on user @ccmexec via Community Hub in ConfigMgr https://github.com/Microsoft/configmgr-hub/commit/e4abdc0d3105afe026211805f13cf533c8de53c4
+Version 1.2 - 09/01/21
+-Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.
+
+-Special Thanks to: -
+-Inspiration for creating a Scheduled Task for Toasts @PaulWetter https://wetterssource.com/ondemandtoast
+-Inspiration for running Toasts in User Context @syst_and_deploy http://www.systanddeploy.com/2020/11/display-simple-toast-notification-for.html
+-Inspiration for creating scheduled tasks for the logged on user @ccmexec via Community Hub in ConfigMgr https://github.com/Microsoft/configmgr-hub/commit/e4abdc0d3105afe026211805f13cf533c8de53c4
 
 Version 1.1 - 30/12/20
-Added Snooze Switch option
+-Added Snooze Switch option
 
 Version 1.0 - 22/07/20
-Release
+-Release
 
 .SYNOPSIS
 The purpose of the script is to create simple Toast Notifications in Windows 10
@@ -54,27 +58,18 @@ Param
 (
     [Parameter(Mandatory = $False)]
     [Switch]$Snooze,
-    [String]$XMLScriptDirSource = "CustomMessage.xml",
-    [String]$XMLOtherSource,
+    [String]$XMLSource = "CustomMessage.xml",
     [String]$ToastGUID
 )
 
-#Set Unique GUID for Toast if it is not passed to the script. This should only happen from the Scheduled Task
-If (!($ToastGUID)){
+#Set Unique GUID for the Toast
+If (!($ToastGUID)) {
     $ToastGUID = ([guid]::NewGuid()).ToString().ToUpper()
 }
 
 #Current Directory
 $ScriptPath = $MyInvocation.MyCommand.Path
 $CurrentDir = Split-Path $ScriptPath
-
-#Check if XML will come from the Script Source Directory or another source
-If (!($PSBoundParameters.ContainsKey('XMLOtherSource') -eq $True)) {
-    $XMLPath = Join-Path $CurrentDir $XMLScriptDirSource
-}
-else {
-    $XMLPath = $XMLOtherSource
-}
 
 #Get Logged On User to prepare Scheduled Task
 $LoggedOnUserName = (Get-CimInstance -Namespace "root\cimv2" -ClassName Win32_ComputerSystem).Username
@@ -142,18 +137,18 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq "NT AUT
 If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $LoggedOnUserName) {
 
     #Test if XML exists
-    if (!(Test-Path -Path $XMLPath)) {
-        throw "$XMLPath is invalid."
+    if (!(Test-Path -Path $XMLSource)) {
+        throw "$XMLSource is invalid."
     }
 
     #Check XML is valid
     $XMLToast = New-Object System.Xml.XmlDocument
     try {
-        $XMLToast.Load((Get-ChildItem -Path $XMLPath).FullName)
+        $XMLToast.Load((Get-ChildItem -Path $XMLSource).FullName)
         $XMLValid = $True
     }
     catch [System.Xml.XmlException] {
-        Write-Verbose "$XMLPath : $($_.toString())"
+        Write-Verbose "$XMLSource : $($_.toString())"
         $XMLValid = $False
     }
 
@@ -161,7 +156,7 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $Logged
     If ($XMLValid -eq $True) {
 
         #Read XML Nodes
-        [XML]$Toast = Get-Content $XMLPath
+        [XML]$Toast = Get-Content $XMLSource
 
         #Create Toast Variables
         $ToastTitle = $XMLToast.ToastContent.ToastTitle
@@ -216,10 +211,8 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $Logged
         [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
         [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
 
-        If (!$Snooze) {
-
-            #Build XML Template when Snooze Timer is not specified
-            [xml]$ToastTemplate = @"
+        #Build XML ToastTemplate 
+        [xml]$ToastTemplate = @"
 <toast duration="$ToastDuration" scenario="reminder">
     <visual>
         <binding template="ToastGeneric">
@@ -241,38 +234,12 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $Logged
         </binding>
     </visual>
     <audio src="ms-winsoundevent:notification.default"/>
-    <actions>
-        <action arguments="$ButtonAction" content="$ButtonTitle" activationType="protocol" />
-        <action arguments="dismiss" content="Dismiss" activationType="system"/>
-    </actions>
 </toast>
 "@
-        }
-        else {
 
-            #Build XML Template when Snooze Timer is specified
-            [xml]$ToastTemplate = @"
-<toast duration="$ToastDuration" scenario="reminder">
-    <visual>
-        <binding template="ToastGeneric">
-            <text>$CustomHello</text>
-            <text>$ToastTitle</text>
-            <text placement="attribution">$Signature</text>
-            <image placement="hero" src="$HeroImage"/>
-            <image placement="appLogoOverride" hint-crop="circle" src="$BadgeImage"/>
-            <group>
-                <subgroup>
-                    <text hint-style="title" hint-wrap="true" >$EventTitle</text>
-                </subgroup>
-            </group>
-            <group>
-                <subgroup>
-                    <text hint-style="body" hint-wrap="true" >$EventText</text>
-                </subgroup>
-            </group>
-        </binding>
-    </visual>
-    <audio src="ms-winsoundevent:notification.default"/>
+#Build XML ActionTemplateSnooze (Used when $Snooze is passed as a parameter)
+[xml]$ActionTemplateSnooze =@"
+<toast>
     <actions>
         <input id="SnoozeTimer" type="selection" title="Select a Snooze Interval" defaultInput="1">
             <selection id="1" content="1 Minute"/>
@@ -280,18 +247,42 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $Logged
             <selection id="60" content="1 Hour"/>
             <selection id="120" content="2 Hours"/>
             <selection id="240" content="4 Hours"/>
-        </input> 
-        <action arguments="$ButtonAction" content="$ButtonTitle" activationType="protocol" />
+        </input>
         <action activationType="system" arguments="snooze" hint-inputId="SnoozeTimer" content="$SnoozeTitle" id="test-snooze"/>
+        <action arguments="$ButtonAction" content="$ButtonTitle" activationType="protocol" />
         <action arguments="dismiss" content="Dismiss" activationType="system"/>
     </actions>
 </toast>
 "@
+
+#Build XML ActionTemplate (Used when $Snooze is not passed as a parameter)
+[xml]$ActionTemplate = @"
+<toast>
+    <actions>
+        <action arguments="$ButtonAction" content="$ButtonTitle" activationType="protocol" />
+        <action arguments="dismiss" content="Dismiss" activationType="system"/>
+    </actions>
+</toast>
+"@
+
+        #If the Snooze parameter was passed, add additional XML elements to Toast
+        If ($Snooze) {
+
+            #Add Snooze Actions to $ToastTemplate
+            $Action_Node = $ActionTemplateSnooze.toast.actions
+            [void]$ToastTemplate.toast.AppendChild($ToastTemplate.ImportNode($Action_Node, $true))
+
+        } else {
+
+            #Add Actions to $ToastTemplate
+            $Action_Node = $ActionTemplate.toast.actions
+            [void]$ToastTemplate.toast.AppendChild($ToastTemplate.ImportNode($Action_Node, $true))
         }
+        
         #Prepare XML
         $ToastXml = [Windows.Data.Xml.Dom.XmlDocument]::New()
         $ToastXml.LoadXml($ToastTemplate.OuterXml)
-
+    
         #Prepare and Create Toast
         $ToastMessage = [Windows.UI.Notifications.ToastNotification]::New($ToastXML)
         [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($LauncherID).Show($ToastMessage)
