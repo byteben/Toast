@@ -20,7 +20,7 @@
 
 -Release
     
-# Project Outline
+# Toast Notify 
 
 **Screenshots**  
   
@@ -68,8 +68,8 @@ Toast_Notify.ps1 -Snooze
   
 **Known Issues** 
   
-Currently, the images in the XML can only be read from the local file system. This is not an issue if we are deploying the package from MEMCM.
-PowerShell Window flashes before Toast when deployed in SYSTEM context
+-Images in the XML can only be read from the local file system. This is not an issue if we are deploying the package from MEMCM  
+-PowerShell Window flashes before Toast when deployed in SYSTEM context  
   
 **Inspiration, Credit and Help**  
   
