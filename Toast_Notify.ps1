@@ -42,10 +42,7 @@ Specify the name of the XML file to read. The XML file must exist in the same di
 Add a snooze option to the Toast
 
 .EXAMPLE
-Toast_Notify.ps1 -XMLOtherSource "\\fileserverhome\xml\CustomMessage.xml"
-
-.EXAMPLE
-Toast_Notify.ps1 -XMLSciptDirSource "PhoneSystemProblems.xml"
+Toast_Notify.ps1 -XMLSource "PhoneSystemProblems.xml"
 
 .EXAMPLE
 Toast_Notify.ps1 -Snooze
