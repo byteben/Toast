@@ -35,11 +35,8 @@ BadgeImage.jpg
 HeroImage.jpg
 CustomMessage.xml
 
-.PARAMETER XMLScriptDirSource
+.PARAMETER XMLSource
 Specify the name of the XML file to read. The XML file must exist in the same directory as Toast_Notify.ps1. If no parameter is passed, it is assumed the XML file is called CustomMessage.xml.
-
-.PARAMETER XMLOtherSource
-Specify the location of the Custom XML file used for the Toast when it is not in the same directory as the Toast_Notify.ps1 script
 
 .PARAMETER Snooze
 Add a snooze option to the Toast
@@ -237,8 +234,8 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $Logged
 </toast>
 "@
 
-#Build XML ActionTemplateSnooze (Used when $Snooze is passed as a parameter)
-[xml]$ActionTemplateSnooze =@"
+        #Build XML ActionTemplateSnooze (Used when $Snooze is passed as a parameter)
+        [xml]$ActionTemplateSnooze = @"
 <toast>
     <actions>
         <input id="SnoozeTimer" type="selection" title="Select a Snooze Interval" defaultInput="1">
@@ -255,8 +252,8 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $Logged
 </toast>
 "@
 
-#Build XML ActionTemplate (Used when $Snooze is not passed as a parameter)
-[xml]$ActionTemplate = @"
+        #Build XML ActionTemplate (Used when $Snooze is not passed as a parameter)
+        [xml]$ActionTemplate = @"
 <toast>
     <actions>
         <action arguments="$ButtonAction" content="$ButtonTitle" activationType="protocol" />
@@ -268,16 +265,17 @@ If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $Logged
         #If the Snooze parameter was passed, add additional XML elements to Toast
         If ($Snooze) {
 
-            #Add Snooze Actions to $ToastTemplate
+            #Define default and snooze actions to be added $ToastTemplate
             $Action_Node = $ActionTemplateSnooze.toast.actions
-            [void]$ToastTemplate.toast.AppendChild($ToastTemplate.ImportNode($Action_Node, $true))
-
-        } else {
-
-            #Add Actions to $ToastTemplate
-            $Action_Node = $ActionTemplate.toast.actions
-            [void]$ToastTemplate.toast.AppendChild($ToastTemplate.ImportNode($Action_Node, $true))
         }
+        else {
+
+            #Define default actions to be added $ToastTemplate
+            $Action_Node = $ActionTemplate.toast.actions
+        }
+
+        #Append actions to $ToastTemplate
+        [void]$ToastTemplate.toast.AppendChild($ToastTemplate.ImportNode($Action_Node, $true))
         
         #Prepare XML
         $ToastXml = [Windows.Data.Xml.Dom.XmlDocument]::New()
