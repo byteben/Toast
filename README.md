@@ -1,5 +1,13 @@
 # Version History  
 
+**Version 1.2.14 - 14/01/21**    
+
+-Fixed logic to return logged on DisplayName - Thanks @MMelkersen  
+-Changed the way we retrieve the SID for the current user variable $LoggedOnUserSID  
+-Added Event Title, Description and Source Path to the Scheduled Task that is created to pop the User Toast  
+-Fixed an issue where Snooze was not being passed from the Scheduled Task  
+-Fixed an issue with XMLSource full path not being returned correctly from Scheduled Task  
+
 **Version 1.2.10 - 10/01/21**    
 
 -Removed XMLOtherSource Parameter  
