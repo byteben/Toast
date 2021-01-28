@@ -5,6 +5,10 @@ Created by:   Ben Whitmore
 Filename:     Toast_Notify.ps1
 ===========================================================================
 
+Version 1.2.28 - 28/01/2021
+-For AzureAD Joined computers we now try and grab a name to display in the Toast by getting the owner of the process Explorer.exe
+-Better error handling when Get-xx fails
+
 Version 1.2.26 - 26/01/2021
 -Changed the Scheduled Task to run as -GroupId "S-1-5-32-545" (USERS). 
 When Toast_Notify.ps1 is deployed as SYSTEM, the scheduled task will be created to run in the context of the Group "Users".
@@ -82,17 +86,23 @@ $CurrentDir = Split-Path $ScriptPath
 
 #Get Logged On User to prepare Scheduled Task
 $LoggedOnUserName = (Get-CimInstance -Namespace "root\cimv2" -ClassName Win32_ComputerSystem).Username
-$LoggedOnUserSID = ([System.Security.Principal.NTAccount]($LoggedOnUserName)).Translate([System.Security.Principal.SecurityIdentifier]).Value
+    Try {
+        $LoggedOnUserSID = ([System.Security.Principal.NTAccount]($LoggedOnUserName)).Translate([System.Security.Principal.SecurityIdentifier]).Value
+    }
+    Catch {
+        Write-Warning "Could not get User SID because Username could not be obtained from Win32_ComputerSystem"
+    }
 
 # Get Profile Path for LoggedOnUser
 Try {
 
     #Set Toast Path to UserProfile Temp Directory
     $LocalUserPath = (Get-CimInstance -Namespace "root\cimv2" -ClassName "Win32_UserProfile" | Where-Object { $_.SID -eq $LoggedOnUserSID }).LocalPath
+    If ($LocalUserPath){
     $LoggedOnUserToastPath = (Join-Path $LocalUserPath "AppData\Local\Temp\$($ToastGuid)")
+    }
 }
 Catch {
-    Write-Warning $_.Exception.Message
     Write-Warning "Error resolving Logged on User SID to a valid Profile Path"
 
     #Set Toast Path to C:\Windows\Temp if user profile path cannot be resolved
@@ -186,6 +196,7 @@ If ($XMLValid -eq $True) {
             If (Get-Itemproperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI" -Name "LastLoggedOnDisplayName" -ErrorAction SilentlyContinue) {
                 $User = Get-Itemproperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI" -Name "LastLoggedOnDisplayName" | Select-Object -ExpandProperty LastLoggedOnDisplayName
                 If ($Null -eq $User) {
+                    
                     $Firstname = $Null
                 } 
                 else {
@@ -194,11 +205,23 @@ If ($XMLValid -eq $True) {
                 }
             }
             else {
-                $Firstname = $Null  
+                Try {
+                    $User = (Get-WmiObject -Namespace "root\cimv2" -ClassName Win32_Process | Where-Object {$_.Name -eq 'explorer.exe'}).GetOwner().User
+                    $User = (Get-Culture).textinfo.totitlecase($User)
+                }
+                Catch {
+                    Write-Warning "Could not get <Name> from owner of the process Explorer.exe or <UserName> from Win32_ComputerSystem"
+                }
+                If ($User){
+                    $Firstname = $User
+                } else {
+                    $Firstname = $Null 
+                }
+                 
             }
         }
         Catch {
-            Write-Warning "Warning: Registry value for LastLoggedOnDisplayName could not be found: $($error[0].Exception)."
+            Write-Warning "Warning: Registry value for LastLoggedOnDisplayName could not be found."
             $Firstname = $Null
         } 
         
