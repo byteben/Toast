@@ -5,6 +5,9 @@ Created by:   Ben Whitmore
 Filename:     Toast_Notify.ps1
 ===========================================================================
 
+Version 1.2.105 - 05/002/2021
+-Changed how we grab the Toast Welcome Name for the Logged on user by leveraging whoami.exe - Thanks Erik Nilsson @dakire
+
 Version 1.2.28 - 28/01/2021
 -For AzureAD Joined computers we now try and grab a name to display in the Toast by getting the owner of the process Explorer.exe
 -Better error handling when Get-xx fails
@@ -206,11 +209,11 @@ If ($XMLValid -eq $True) {
             }
             else {
                 Try {
-                    $User = (Get-WmiObject -Namespace "root\cimv2" -ClassName Win32_Process | Where-Object {$_.Name -eq 'explorer.exe'}).GetOwner().User
-                    $User = (Get-Culture).textinfo.totitlecase($User)
+                    $User = whoami.exe
+                    $User = (Get-Culture).textinfo.totitlecase($User.Split("\")[1])
                 }
                 Catch {
-                    Write-Warning "Could not get <Name> from owner of the process Explorer.exe or <UserName> from Win32_ComputerSystem"
+                    Write-Warning "Could not get <Name> from whoami.exe or <UserName> from Win32_ComputerSystem"
                 }
                 If ($User){
                     $Firstname = $User
