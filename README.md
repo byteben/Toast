@@ -1,41 +1,53 @@
 # Version History  
 
+**Version 2.0 - 07/02/2021**    
+  
+- Basic logging added  
+- Toast temp directory fixed to $ENV:\Temp\$ToastGUID  
+- Removed unncessary User SID discovery as its no longer needed when running the Scheduled Task as "USERS"  
+- Complete re-write for obtaining Toast Displayname. Name obtained first for Domain User, then AzureAD User from the IdentityStore Logon Cache and finally whoami.exe  
+- Added "AllowStartIfOnBatteries" parameter to Scheduled Task    
+
+**Version 1.2.105 - 05/002/2021**   
+  
+- Changed how we grab the Toast Welcome Name for the Logged on user by leveraging whoami.exe - Thanks Erik Nilsson @dakire    
+
 **Version 1.2.28 - 28/01/2021**    
 
--For AzureAD Joined computers we now try and grab a name to display in the Toast by getting the owner of the process Explorer.exe
--Better error handling when Get-xx fails  
+- For AzureAD Joined computers we now try and grab a name to display in the Toast by getting the owner of the process Explorer.exe  
+- Better error handling when Get-xx fails  
 
 **Version 1.2.26 - 26/01/2021**    
 
--Changed the Scheduled Task to run as -GroupId "S-1-5-32-545" (USERS). 
-When Toast_Notify.ps1 is deployed as SYSTEM, the scheduled task will be created to run in the context of the Group "Users".
-This means the Toast will pop for the logged on user even if the username was unobtainable (During testing AzureAD Joined Computers did not populate (Win32_ComputerSystem).Username).
-The Toast will also be staged in the $ENV:Windir "Temp\$($ToastGuid)" folder if the logged on user information could not be found.
-Thanks @CodyMathis123 for the inspiration via https://github.com/CodyMathis123/CM-Ramblings/blob/master/New-PostTeamsMachineWideInstallScheduledTask.ps1  
+- Changed the Scheduled Task to run as -GroupId "S-1-5-32-545" (USERS)  
+- When Toast_Notify.ps1 is deployed as SYSTEM, the scheduled task will be created to run in the context of the Group "Users"  
+This means the Toast will pop for the logged on user even if the username was unobtainable (During testing AzureAD Joined Computers did not populate (Win32_ComputerSystem).Username)  
+- The Toast will also be staged in the $ENV:Windir "Temp\$($ToastGuid)" folder if the logged on user information could not be found  
+- Thanks @CodyMathis123 for the inspiration via https://github.com/CodyMathis123/CM-Ramblings/blob/master/New-PostTeamsMachineWideInstallScheduledTask.ps1  
 
 **Version 1.2.14 - 14/01/21**    
-
--Fixed logic to return logged on DisplayName - Thanks @MMelkersen  
--Changed the way we retrieve the SID for the current user variable $LoggedOnUserSID  
--Added Event Title, Description and Source Path to the Scheduled Task that is created to pop the User Toast  
--Fixed an issue where Snooze was not being passed from the Scheduled Task  
--Fixed an issue with XMLSource full path not being returned correctly from Scheduled Task  
+  
+- Fixed logic to return logged on DisplayName - Thanks @MMelkersen  
+- Changed the way we retrieve the SID for the current user variable $LoggedOnUserSID  
+- Added Event Title, Description and Source Path to the Scheduled Task that is created to pop the User Toast  
+- Fixed an issue where Snooze was not being passed from the Scheduled Task  
+- Fixed an issue with XMLSource full path not being returned correctly from Scheduled Task  
 
 **Version 1.2.10 - 10/01/21**    
 
--Removed XMLOtherSource Parameter  
--Cleaned up XML formatting which removed unnecessary duplication when the Snooze parameter was passed. Action ChildNodes are now appended to ToastTemplate XML.
+- Removed XMLOtherSource Parameter  
+- Cleaned up XML formatting which removed unnecessary duplication when the Snooze parameter was passed. Action ChildNodes are now appended to ToastTemplate XML.
 
 **Version 1.2 - 09/01/21**  
 
--Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.  
--If the Toast script is deployed in the SYSTEM context, the script source is copied to a new folder in the users %TEMP% Directory. The folder is given a unique GUID name.  
--A scheduled task is created for the current logged on user and is unique for the each time the Toast Script is deployed. Each scheduled task is named using the User SID and the unique Task GUID.  
--If the script is deployed to the current logged on user, a scheduled task is not created and the script is run as normal.  
+- Added logic so if the script is deployed as SYSTEM it will create a scheduled task to run the script for the current logged on user.  
+- If the Toast script is deployed in the SYSTEM context, the script source is copied to a new folder in the users %TEMP% Directory. The folder is given a unique GUID name.  
+- A scheduled task is created for the current logged on user and is unique for the each time the Toast Script is deployed. Each scheduled task is named using the User SID and the unique Task GUID.  
+- If the script is deployed to the current logged on user, a scheduled task is not created and the script is run as normal.  
 
 **Version 1.1 - 30/12/20**  
 
--Added a Snooze option (Use the -Snooze switch).  
+- Added a Snooze option (Use the -Snooze switch).  
 
 **Version 1.0 - 22/07/20**  
 
