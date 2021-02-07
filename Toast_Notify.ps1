@@ -5,6 +5,13 @@ Created by:   Ben Whitmore
 Filename:     Toast_Notify.ps1
 ===========================================================================
 
+Version 2.0 - 07/02/2021
+-Basic logging added
+-Toast temp directory fixed to $ENV:\Temp\$ToastGUID
+-Removed unncessary User SID discovery as its no longer needed when running the Scheduled Task as "USERS"
+-Complete re-write for obtaining Toast Displayname. Name obtained first for Domain User, then AzureAD User from the IdentityStore Logon Cache and finally whoami.exe
+- Added "AllowStartIfOnBatteries" parameter to Scheduled Task
+
 Version 1.2.105 - 05/002/2021
 -Changed how we grab the Toast Welcome Name for the Logged on user by leveraging whoami.exe - Thanks Erik Nilsson @dakire
 
@@ -87,30 +94,8 @@ If (!($ToastGUID)) {
 $ScriptPath = $MyInvocation.MyCommand.Path
 $CurrentDir = Split-Path $ScriptPath
 
-#Get Logged On User to prepare Scheduled Task
-$LoggedOnUserName = (Get-CimInstance -Namespace "root\cimv2" -ClassName Win32_ComputerSystem).Username
-    Try {
-        $LoggedOnUserSID = ([System.Security.Principal.NTAccount]($LoggedOnUserName)).Translate([System.Security.Principal.SecurityIdentifier]).Value
-    }
-    Catch {
-        Write-Warning "Could not get User SID because Username could not be obtained from Win32_ComputerSystem"
-    }
-
-# Get Profile Path for LoggedOnUser
-Try {
-
-    #Set Toast Path to UserProfile Temp Directory
-    $LocalUserPath = (Get-CimInstance -Namespace "root\cimv2" -ClassName "Win32_UserProfile" | Where-Object { $_.SID -eq $LoggedOnUserSID }).LocalPath
-    If ($LocalUserPath){
-    $LoggedOnUserToastPath = (Join-Path $LocalUserPath "AppData\Local\Temp\$($ToastGuid)")
-    }
-}
-Catch {
-    Write-Warning "Error resolving Logged on User SID to a valid Profile Path"
-
-    #Set Toast Path to C:\Windows\Temp if user profile path cannot be resolved
-    $LoggedOnUserToastPath = (Join-Path $ENV:Windir "Temp\$($ToastGuid)")
-}
+#Set Toast Path to UserProfile Temp Directory
+$ToastPath = (Join-Path $ENV:Windir "Temp\$($ToastGuid)")
 
 #Test if XML exists
 if (!(Test-Path (Join-Path $CurrentDir $XMLSource))) {
@@ -159,12 +144,12 @@ If ($XMLValid -eq $True) {
         Try {
 
             #Create TEMP folder to stage Toast Notification Content in %TEMP% Folder
-            New-Item $LoggedOnUserToastPath -ItemType Directory -Force -ErrorAction Continue | Out-Null
+            New-Item $ToastPath -ItemType Directory -Force -ErrorAction Continue | Out-Null
             $ToastFiles = Get-ChildItem $CurrentDir -Recurse
 
             #Copy Toast Files to Toat TEMP folder
             ForEach ($ToastFile in $ToastFiles) {
-                Copy-Item (Join-Path $CurrentDir $ToastFile) -Destination $LoggedOnUserToastPath -ErrorAction Continue
+                Copy-Item (Join-Path $CurrentDir $ToastFile) -Destination $ToastPath -ErrorAction Continue
             }
         }
         Catch {
@@ -172,7 +157,7 @@ If ($XMLValid -eq $True) {
         }
 
         #Set new Toast script to run from TEMP path
-        $New_ToastPath = Join-Path $LoggedOnUserToastPath "Toast_Notify.ps1"
+        $New_ToastPath = Join-Path $ToastPath "Toast_Notify.ps1"
 
         #Created Scheduled Task to run as Logged on User
         $Task_TimeToRun = (Get-Date).AddSeconds(30).ToString('s')
@@ -186,48 +171,97 @@ If ($XMLValid -eq $True) {
         $Task_Trigger = New-ScheduledTaskTrigger -Once -At $Task_TimeToRun
         $Task_Trigger.EndBoundary = $Task_Expiry
         $Task_Principal = New-ScheduledTaskPrincipal -GroupId "S-1-5-32-545" -RunLevel Limited
-        $Task_Settings = New-ScheduledTaskSettingsSet -Compatibility V1 -DeleteExpiredTaskAfter (New-TimeSpan -Seconds 600)
-        $New_Task = New-ScheduledTask -Description "Toast_Notification_$($LoggedOnUserSID)_$($ToastGuid) Task for user notification. Title: $($EventTitle) :: Event:$($EventText) :: Source Path: $($LoggedOnUserToastPath) " -Action $Task_Action -Principal $Task_Principal -Trigger $Task_Trigger -Settings $Task_Settings
-        Register-ScheduledTask -TaskName "Toast_Notification_$($LoggedOnUserSID)_$($ToastGuid)" -InputObject $New_Task
+        $Task_Settings = New-ScheduledTaskSettingsSet -Compatibility V1 -DeleteExpiredTaskAfter (New-TimeSpan -Seconds 600) -AllowStartIfOnBatteries
+        $New_Task = New-ScheduledTask -Description "Toast_Notification_$($ToastGuid) Task for user notification. Title: $($EventTitle) :: Event:$($EventText) :: Source Path: $($ToastPath) " -Action $Task_Action -Principal $Task_Principal -Trigger $Task_Trigger -Settings $Task_Settings
+        Register-ScheduledTask -TaskName "Toast_Notification_$($ToastGuid)" -InputObject $New_Task
     }
 
     #Run the toast of the script is running in the context of the Logged On User
-    If (([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq $LoggedOnUserName) {
+    If (!(([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name -eq "NT AUTHORITY\SYSTEM")) {
+
+        $Log = (Join-Path $ENV:Windir "Temp\$($ToastGuid).log")
+        Start-Transcript $Log
 
         #Get logged on user DisplayName
+        #Try to get the DisplayName for Domain User
+        $ErrorActionPreference = "Continue"
+
         Try {
-            If (Get-Itemproperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI" -Name "LastLoggedOnDisplayName" -ErrorAction SilentlyContinue) {
-                $User = Get-Itemproperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI" -Name "LastLoggedOnDisplayName" | Select-Object -ExpandProperty LastLoggedOnDisplayName
-                If ($Null -eq $User) {
-                    
-                    $Firstname = $Null
-                } 
-                else {
+            Write-Output "Trying Identity LogonUI Registry Key for Domain User info..."
+            Get-Itemproperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI" -Name "LastLoggedOnDisplayName" -ErrorAction Stop
+            $User = Get-Itemproperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI" -Name "LastLoggedOnDisplayName" | Select-Object -ExpandProperty LastLoggedOnDisplayName -ErrorAction Stop
+        
+            If ($Null -eq $User) {  
+                $Firstname = $Null
+            } 
+            else {
+                $DisplayName = $User.Split(" ")
+                $Firstname = $DisplayName[0]
+            }
+        }
+        Catch [System.Management.Automation.PSArgumentException] {
+            "Registry Key Property missing" 
+            Write-Warning "Registry Key for LastLoggedOnDisplayName could not be found."
+            $Firstname = $Null
+        }
+        Catch [System.Management.Automation.ItemNotFoundException] {
+            "Registry Key itself is missing" 
+            Write-Warning "Registry value for LastLoggedOnDisplayName could not be found."
+            $Firstname = $Null
+        }
+
+        #Try to get the DisplayName for Azure AD User
+        If ($Null -eq $Firstname) {
+            Write-Output "Trying Identity Store Cache for Azure AD User info..."
+            Try {
+                $UserSID = (whoami /user /fo csv | ConvertFrom-Csv).Sid
+                $LogonCacheSID = (Get-ChildItem HKLM:\SOFTWARE\Microsoft\IdentityStore\LogonCache -Recurse -Depth 2 | Where-Object { $_.Name -match $UserSID }).Name
+                If ($LogonCacheSID) { 
+                    $LogonCacheSID = $LogonCacheSID.Replace("HKEY_LOCAL_MACHINE", "HKLM:") 
+                    $User = Get-ItemProperty -Path $LogonCacheSID | Select-Object -ExpandProperty DisplayName -ErrorAction Stop
                     $DisplayName = $User.Split(" ")
                     $Firstname = $DisplayName[0]
                 }
+                else {
+                    Write-Warning "Could not get DisplayName property from Identity Store Cache for Azure AD User"
+                    $Firstname = $Null
+                }
             }
-            else {
-                Try {
-                    $User = whoami.exe
-                    $User = (Get-Culture).textinfo.totitlecase($User.Split("\")[1])
-                }
-                Catch {
-                    Write-Warning "Could not get <Name> from whoami.exe or <UserName> from Win32_ComputerSystem"
-                }
-                If ($User){
-                    $Firstname = $User
-                } else {
-                    $Firstname = $Null 
-                }
-                 
+            Catch [System.Management.Automation.PSArgumentException] {
+                Write-Warning "Could not get DisplayName property from Identity Store Cache for Azure AD User"
+                Write-Output "Resorting to whoami info for Toast DisplayName..."
+                $Firstname = $Null
+            }
+            Catch [System.Management.Automation.ItemNotFoundException] {
+                Write-Warning "Could not get SID from Identity Store Cache for Azure AD User"
+                Write-Output "Resorting to whoami info for Toast DisplayName..."
+                $Firstname = $Null
+            }
+            Catch {
+                Write-Warning "Could not get SID from Identity Store Cache for Azure AD User"
+                Write-Output "Resorting to whoami info for Toast DisplayName..."
+                $Firstname = $Null  
             }
         }
-        Catch {
-            Write-Warning "Warning: Registry value for LastLoggedOnDisplayName could not be found."
-            $Firstname = $Null
-        } 
-        
+
+        #Try to get the DisplayName from whoami
+        If ($Null -eq $Firstname) {
+            Try {
+                Write-Output "Trying Identity whoami.exe for DisplayName info..."
+                $User = whoami.exe
+                $Firstname = (Get-Culture).textinfo.totitlecase($User.Split("\")[1])
+                Write-Output "DisplayName retrieved from whoami.exe"
+            }
+            Catch {
+                Write-Warning "Could not get DisplayName from whoami.exe"
+            }
+        }
+
+        #If DisplayName could not be obtained, leave it blank
+        If ($Null -eq $Firstname) {
+            Write-Output "DisplayName could not be obtained, it will be blank in the Toast"
+        }
+                   
         #Get Hour of Day and set Custom Hello
         $Hour = (Get-Date).Hour
         If ($Hour -lt 12) { $CustomHello = "Good Morning $($Firstname)" }
@@ -314,5 +348,7 @@ If ($XMLValid -eq $True) {
         #Prepare and Create Toast
         $ToastMessage = [Windows.UI.Notifications.ToastNotification]::New($ToastXML)
         [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($LauncherID).Show($ToastMessage)
+
+        Stop-Transcript
     }
 }
